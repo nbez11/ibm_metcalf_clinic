@@ -133,6 +133,67 @@ elif choice == "CHSH Game":
     if S > 2.828:
         st.warning("Beyond Tsirelson's bound? Check parameters.")
 
+#SKQD Algorithm
+elif choice == "SKQD Algorithm":
+    st.title("Sample-based Krylov Quantum Diagonalization (SKQD)")
+
+    st.write("""
+    The Sample-based Krylov Quantum Diagonalization (SKQD) algorithm is a
+    hybrid quantum-classical method used to estimate the energy levels
+    (eigenvalues) of a quantum system's Hamiltonian (a Hamiltonian describes
+             all energies, interactions, and rules of a system).
+    """)
+    
+    st.subheader("How it works")
+    """1. Build a Krylov Subspace  
+       - Start with a simple state |v⟩.  
+       - Apply the Hamiltonian H repeatedly to generate states:  
+         |v⟩, H|v⟩, H²|v⟩, …  
+       - These states form a small "playlist" that captures the important physics.
+
+    2. Estimate Overlaps on a Quantum Computer  
+       - We need to know how similar the states are to each other.  
+       - Using quantum circuits (like swap tests), we estimate the inner products:  
+         - Sᵢⱼ = ⟨vᵢ | vⱼ⟩  
+         - Hᵢⱼ = ⟨vᵢ | H | vⱼ⟩  
+       - Because quantum computers give probabilistic results, we repeat experiments
+         many times (this is the sample-based part).
+
+    3. Classical Diagonalization  
+       - The measured overlaps form a small matrix.  
+       - A classical computer diagonalizes this small matrix to approximate the
+         true eigenvalues of the big Hamiltonian.
+
+    """
+    st.subheader("Why it is important")
+    """
+    - Avoids heavy quantum algorithms*: Unlike full quantum phase estimation,
+      SKQD works on near-term (NISQ) devices.
+    - No ansatz guessing: Unlike VQE, we don’t need to design a clever trial wavefunction.
+    - Efficient: A few Krylov states often give very accurate energy estimates.
+    - Applications: 
+        -Quantum chemistry: it allows for the ground state energy of 
+            molecules of complex sysetms to be calculated.
+        - Materials: science: as it may allow us to better understand the flow of
+            electrons by knowing their quantum properties which may lead to 
+            efficientcy gains.
+    """
+    
+    st.subheader("In short:")  
+    """
+    SKQD lets a quantum computer provide just enough information (via sampling) so
+    that a classical computer can do the hard math of diagonalizing the system's
+    Hamiltonian. To give an analogy that may be a bit easier to understand, we
+    begin with a single state before repeatedly applying a chain of the system's
+    rules. This in turn generates a chain of related states which in turn allows
+    us to use difference combinations of them in order to created the krylov subspace.
+    From this subspace we can then analyze it in order to understand the physics
+    of the larger system. Once this is achieved we can then switch back to classical
+    computing in order to diagonalize the states in order to find the energy of
+    our total system. 
+    """
+    
+
 # Noise Experiments
 elif choice == "Noise Experiments":
     st.title("⚡ Noise Experiments")
