@@ -145,7 +145,7 @@ elif choice == "SKQD Algorithm":
     """)
     
     st.subheader("How it works")
-    """1. Build a Krylov Subspace  
+    st.write("""1. Build a Krylov Subspace  
        - Start with a simple state |v⟩.  
        - Apply the Hamiltonian H repeatedly to generate states:  
          |v⟩, H|v⟩, H²|v⟩, …  
@@ -164,9 +164,9 @@ elif choice == "SKQD Algorithm":
        - A classical computer diagonalizes this small matrix to approximate the
          true eigenvalues of the big Hamiltonian.
 
-    """
+    """)
     st.subheader("Why it is important")
-    """
+    st.write("""
     - Avoids heavy quantum algorithms*: Unlike full quantum phase estimation,
       SKQD works on near-term (NISQ) devices.
     - No ansatz guessing: Unlike VQE, we don’t need to design a clever trial wavefunction.
@@ -177,10 +177,10 @@ elif choice == "SKQD Algorithm":
         - Materials: science: as it may allow us to better understand the flow of
             electrons by knowing their quantum properties which may lead to 
             efficientcy gains.
-    """
+    """)
     
     st.subheader("In short:")  
-    """
+    st.write("""
     SKQD lets a quantum computer provide just enough information (via sampling) so
     that a classical computer can do the hard math of diagonalizing the system's
     Hamiltonian. To give an analogy that may be a bit easier to understand, we
@@ -191,7 +191,7 @@ elif choice == "SKQD Algorithm":
     of the larger system. Once this is achieved we can then switch back to classical
     computing in order to diagonalize the states in order to find the energy of
     our total system. 
-    """
+    """)
     
 
 # Noise Experiments
