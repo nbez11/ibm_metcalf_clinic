@@ -3,6 +3,7 @@ import numpy as np
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, depolarizing_error, amplitude_damping_error, thermal_relaxation_error
+from qiskit.circuit.library import grover_operator, MCMTGate, ZGate
 from math import pi
 import matplotlib.pyplot as plt
 
@@ -15,6 +16,8 @@ pages = [
     "Quantum Teleportation",
     "Superdense Coding",
     "CHSH Game",
+    "SKQD Algorithm",
+    "Grover's Algorithm",
     "Noise Experiments",
     "Autograder"
 ]
@@ -136,40 +139,60 @@ elif choice == "CHSH Game":
 #SKQD Algorithm
 elif choice == "SKQD Algorithm":
     st.title("Sample-based Krylov Quantum Diagonalization (SKQD)")
-
+    st.link_button("Check out the IBM article this section is based on", "https://quantum.cloud.ibm.com/learning/en/courses/quantum-diagonalization-algorithms/skqd")
     st.write("""
-    The Sample-based Krylov Quantum Diagonalization (SKQD) algorithm is a
-    hybrid quantum-classical method used to estimate the energy levels
-    (eigenvalues) of a quantum system's Hamiltonian (a Hamiltonian describes
-             all energies, interactions, and rules of a system).
+        The Sample-based Krylov Quantum Diagonalization (SKQD) algorithm is a
+        hybrid quantum-classical method used to estimate the energy levels
+        (eigenvalues) of a quantum system's Hamiltonian (a Hamiltonian describes
+        all energies, interactions, and rules of a system).
     """)
     
     st.subheader("How it works")
-    st.write("""1. Build a Krylov Subspace  
-       - Start with a simple state |v⟩.  
-       - Apply the Hamiltonian H repeatedly to generate states:  
-         |v⟩, H|v⟩, H²|v⟩, …  
-       - These states form a small "playlist" that captures the important physics.
+    st.write("""
+    1. Build a Krylov Subspace  
+        - Start with a simple state |v⟩.  
+        - Apply the Hamiltonian H repeatedly to generate states:  
+            |v⟩, H|v⟩, H²|v⟩, …  
+        - These states form a small (example)subspace that captures the important
+            physics.
 
     2. Estimate Overlaps on a Quantum Computer  
-       - We need to know how similar the states are to each other.  
-       - Using quantum circuits (like swap tests), we estimate the inner products:  
-         - Sᵢⱼ = ⟨vᵢ | vⱼ⟩  
-         - Hᵢⱼ = ⟨vᵢ | H | vⱼ⟩  
-       - Because quantum computers give probabilistic results, we repeat experiments
-         many times (this is the sample-based part).
+        - We need to find out how similar the states are to each other.  
+        - Using quantum circuits (like swap tests), we estimate the inner products:  
+        - Sᵢⱼ = ⟨vᵢ | vⱼ⟩  
+        - Hᵢⱼ = ⟨vᵢ | H | vⱼ⟩  
+        - Because our quantum computers can only give probabilistic results, we 
+            repeat experiments many times (this is the sample-based part).
 
     3. Classical Diagonalization  
-       - The measured overlaps form a small matrix.  
-       - A classical computer diagonalizes this small matrix to approximate the
-         true eigenvalues of the big Hamiltonian.
-
+        - The measured overlaps form a small matrix.  
+        - A classical computer diagonalizes this small matrix to approximate the
+            true energy levels (eigenvalues) of the big Hamiltonian.
     """)
+
+    st.subheader("Role of Entanglement")
+    st.write("""
+    - Entanglement is used in SKQD during the overlap estimation step. 
+    - To compare two quantum states (for example |vᵢ⟩ and |vⱼ⟩), we need 
+        circuits like the swap test. These circuits rely on creating entanglement 
+        between an ancilla qubit (a helper qubit) and the system qubits. The 
+        expectation value of the ancilla quibit determines the value overlap
+        of the quantum states.  
+    - This entanglement lets us extract information about how similar two states 
+        are, without fully measuring or destroying them. 
+    - In other words, entanglement links multiple states together so that we can
+        measure how similar they are to eachother.
+    - Without entanglement, we would not be able to build the Krylov subspace
+        to efficiently estimates the overlaps of the states.
+    """)
+
     st.subheader("Why it is important")
     st.write("""
-    - Avoids heavy quantum algorithms*: Unlike full quantum phase estimation,
-      SKQD works on near-term (NISQ) devices.
-    - No ansatz guessing: Unlike VQE, we don’t need to design a clever trial wavefunction.
+    - Avoids heavy quantum algorithms: Unlike full quantum phase estimation,
+        SKQD works on near-term (NISQ) devices. In essence instead of using the 
+        extremely deep circuits that quantum phase estimation uses to find energy 
+        levels, SKQD can use much shallower circtuis that use more practical
+        repeated sample.
     - Efficient: A few Krylov states often give very accurate energy estimates.
     - Applications: 
         -Quantum chemistry: it allows for the ground state energy of 
@@ -193,6 +216,82 @@ elif choice == "SKQD Algorithm":
     our total system. 
     """)
     
+# Grover
+elif choice == "Grover's Algorithm":
+    st.title("Grover's Algorithm")
+    st.link_button("Check out the IBM article this section is based on", "https://quantum.cloud.ibm.com/docs/en/tutorials/grovers-algorithm")
+    st.write("""
+    Grover’s algorithm is a quantum search method that provides a quadratic speedup 
+    for finding marked states in an unsorted database.
+
+    Key Ideas:
+    - Oracle: Marks the solution states by flipping their phase (meaning a state
+             with a phase of -1).
+    - Applification circuit/Diffusion operator: Amplifies the marked states’ amplitudes.
+    - Iteration: Repeated oracle + applification circuit increases the probability of measuring a solution.
+    - After about √N iterations (where N = 2^n), the marked states are aplified so much that it has the
+             highest probability of being measured
+    """)
+
+    st.subheader("Role of Entanglement")
+    st.write("""
+    - Grover’s algorithm uses entanglement because the oracle and diffusion operators 
+      require multi-qubit operations (such as multi-controlled gates).
+    - The gates entangle qubits, making their amplitudes to become combined and interfered with.
+    - This interference is what allows Grover’s algorithm to amplify certain
+        marked states and suppress the non-marked states.
+    """)
+
+    #User input
+    num_qubits = st.slider("Number of qubits", 2, 4, 3)
+    marked_states_input = st.text_input(
+        "Enter marked states (comma-separated, e.g. 011,100)", "011,100"
+    )
+    marked_states = [s.strip() for s in marked_states_input.split(",") if s.strip()]
+
+    # Oracle builder (adapted from IBM article)
+    def grover_oracle(marked_states):
+        if not isinstance(marked_states, list):
+            marked_states = [marked_states]
+        qc = QuantumCircuit(num_qubits)
+        for target in marked_states:
+            rev_target = target[::-1]
+            zero_inds = [i for i, bit in enumerate(rev_target) if bit == "0"]
+            if zero_inds:
+                qc.x(zero_inds)
+            qc.compose(MCMTGate(ZGate(), num_qubits - 1, 1), inplace=True)
+            if zero_inds:
+                qc.x(zero_inds)
+        return qc
+
+    oracle = grover_oracle(marked_states)
+    grover_op = grover_operator(oracle)
+
+   # Optimal number of iterations
+    optimal_iter = int(np.floor(
+        np.pi / (4 * np.arcsin(np.sqrt(len(marked_states) / 2**num_qubits)))
+    ))
+    st.write(f"Optimal number of Grover iterations: **{optimal_iter}**")
+
+    # Full Grover circuit
+    qc = QuantumCircuit(num_qubits, num_qubits)
+    qc.h(range(num_qubits))
+    qc.compose(grover_op.power(optimal_iter), inplace=True)
+    qc.measure(range(num_qubits), range(num_qubits))
+
+    show_circuit(qc)
+
+    #Run
+    shots = st.slider("Shots", 100, 5000, 1024, step=100)
+    result = backend.run(qc, shots=shots).result()
+    counts = result.get_counts()
+    st.write("Counts:", counts)
+
+    st.write("""
+     Notice that the marked states appear with much higher probability 
+    than the unmarked states, thanks to amplitude amplification.
+    """)
+
 
 # Noise Experiments
 elif choice == "Noise Experiments":
