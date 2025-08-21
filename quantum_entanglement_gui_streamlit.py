@@ -259,7 +259,10 @@ elif choice == "Grover's Algorithm":
             zero_inds = [i for i, bit in enumerate(rev_target) if bit == "0"]
             if zero_inds:
                 qc.x(zero_inds)
-            qc.compose(MCMTGate(ZGate(), num_qubits - 1, 1), inplace=True)
+            ## this line doesnt work bc using AER simulator not IBM runtime qc.compose(MCMTGate(ZGate(), num_qubits - 1, 1), inplace=True)
+            qc.h(num_qubits - 1)                   # turn Z into X
+            qc.mcx(list(range(num_qubits - 1)), num_qubits - 1)
+            qc.h(num_qubits - 1)
             if zero_inds:
                 qc.x(zero_inds)
         return qc
