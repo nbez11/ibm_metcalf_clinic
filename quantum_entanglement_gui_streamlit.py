@@ -432,6 +432,8 @@ elif choice == "Shor's Algorithm":
 
     found = set()
     for _, phase, _, r_guess, _ in guesses:
+        if phase == 0.0:
+            continue
         facs = try_factor_from_r(a, N, r_guess)
         if facs:
             for f in facs:
