@@ -322,10 +322,56 @@ elif choice == "Shor's Algorithm":
        $\\(\\gcd(a^{r/2} \\pm 1, N)\\)$.
     """)
 
-    N = 15
-    a = 2  # follow the IBM tutorial exactly
+    st.subheader("How Shor's Algorithm Works")
 
-    # Minimal swap-based implementations for M2 and M4 (mod 15)
+    st.write("""
+        Shor’s algorithm is a quantum algorithm for integer factorization. 
+        Its power comes from turning a hard classical problem (factoring large numbers) into 
+        a problem of finding the period of a modular function, which quantum computers 
+        can solve efficiently. In essence it can find the prime factors of large
+        integers faster than any known classical algorithm
+
+        1. **Reduction to Period Finding**  
+        - To factor an integer N, Shor’s algorithm reduces the problem to finding the 
+            period (or order) of the function f(x) = a^x mod N, for some random a < N.
+        - Once the period r is known, we can often compute the nontrivial factors of N.
+
+        2. **Quantum Fourier Transform (QFT)**  
+        - The quantum circuit prepares a superposition of many possible values of x.
+        - Modular exponentiation entangles these x-values with their outputs f(x).
+        - Applying the QFT extracts information about the period r, amplifying 
+            measurement outcomes that encode the hidden periodicity.
+        - This step specifically is what gives the quantum algorithm an advantage
+             over its classical counterparts turning it into having an exponential 
+             speedup.
+             
+        3. **Measurement and Classical Postprocessing**  
+        - Measuring the quantum state collapses it to a value strongly correlated with the period.
+        - Classical number theory (using the Euclidean algorithm) then turns the period into actual factors of N.
+        """)
+
+    st.subheader("Role of Entanglement")
+    st.write("""
+        Entanglement is essential because it correlates each input x (held in superposition) 
+        with its modular output f(x). This global correlation ensures that when the QFT is 
+        applied, interference across all states reveals the hidden period r. Without entanglement, 
+        the algorithm would just produce random samples of f(x) with no usable structure.
+        """)
+
+    st.subheader("Why It Is Important")
+    st.write("""
+        - **Breaks RSA Encryption**: RSA is one of the most widely used public-key cryptosystems, 
+        securing things like online banking, HTTPS websites, and digital signatures. Its security 
+        relies on the fact that factoring a large number is infeasible for classical computers as it would
+        take an extremely large time to do (such a long time it is no feasible at all). 
+
+        Shor’s algorithm can factor these large numbers efficiently on a quantum computer. 
+        Once the modulus N is factored into its prime components, an attacker can compute the 
+        private key and decrypt messages or forge signatures, allowing them to impersonate anyone online. 
+        """)
+    
+    N = 15
+    a = 2  #From IBM tutorial
     def M2mod15():
         """Permutation for b=2 (mod 15) implemented with swaps (as in IBM tutorial)."""
         U = QuantumCircuit(4)
@@ -404,11 +450,10 @@ elif choice == "Shor's Algorithm":
     rows = []
     phases = []
     for bitstr, cnt in counts.items():
-        dec = int(bitstr, 2)  # control register shown MSB->LSB; IBM tutorial uses int(bitstr,2)
+        dec = int(bitstr, 2) 
         phase = dec / (2**num_control)
         phases.append((bitstr, dec, phase, cnt))
         rows.append([bitstr, dec, f"{dec}/{2**num_control}", f"{phase:.4f}", cnt])
-
     st.subheader("Measured phases")
     st.table(rows)
 
