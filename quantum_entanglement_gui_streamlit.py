@@ -249,7 +249,6 @@ elif choice == "Grover's Algorithm":
     )
     marked_states = [s.strip() for s in marked_states_input.split(",") if s.strip()]
 
-    # Build Grover Oracle
     def grover_oracle(marked_states, n_qubits):
         qc = QuantumCircuit(n_qubits)
         for state in marked_states:
@@ -282,13 +281,11 @@ elif choice == "Grover's Algorithm":
         qc.h(range(n_qubits))
         return qc
 
-    # Compute optimal number of Grover iterations
     optimal_iter = int(np.floor(np.pi / (4 * np.arcsin(np.sqrt(len(marked_states) / 2**num_qubits)))))
     st.write(f"Optimal number of Grover iterations: **{optimal_iter}**")
 
-    # Build full Grover circuit
     qc = QuantumCircuit(num_qubits, num_qubits)
-    qc.h(range(num_qubits))  # Initialize in superposition
+    qc.h(range(num_qubits))
 
     oracle = grover_oracle(marked_states, num_qubits)
     diffusion = diffusion_operator(num_qubits)
@@ -299,9 +296,7 @@ elif choice == "Grover's Algorithm":
 
     qc.measure(range(num_qubits), range(num_qubits))
 
-    # Show circuit
     show_circuit(qc)
-
     # Run on AerSimulator
     shots = st.slider("Shots", 100, 5000, 1024, step=100)
     result = backend.run(qc, shots=shots).result()
