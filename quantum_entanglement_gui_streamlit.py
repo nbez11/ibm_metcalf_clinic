@@ -391,7 +391,7 @@ elif choice == "Shor's Algorithm":
 
         1. **Reduction to Period Finding**  
         - To factor an integer N, Shor’s algorithm reduces the problem to finding the 
-            period (or order) of the function f(x) = a^x mod N, for some random a < N.
+            period (or order) of the function $f(x) = a^x$ mod N, for some random $a < N$.
         - Once the period r is known, we can often compute the nontrivial factors of N.
 
         2. **Quantum Fourier Transform (QFT)**  
