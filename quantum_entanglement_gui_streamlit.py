@@ -374,10 +374,10 @@ elif choice == "Shor's Algorithm":
     st.link_button("Check out the IBM article this section is based on", "https://quantum.cloud.ibm.com/docs/en/tutorials/shors-algorithm")
     st.write("""
     This tab reproduces the IBM tutorial’s approach:
-    1) Build order-finding as phase estimation for the modular-multiply unitary $\(M_a\)$ with $\(N=15, a=2\)$.
-    2) Run on a simulator to get the counting-register distribution (peaks near multiples of $\(k/r\)$).
-    3) Use continued fractions to recover the order $\(r\)$, then compute non-trivial factors via
-       $\\(\\gcd(a^{r/2} \\pm 1, N)\\)$.
+    1) Build order-finding as phase estimation for the modular-multiply unitary $M_a$ with $N=15, a=2$.
+    2) Run on a simulator to get the counting-register distribution (peaks near multiples of $k/r$.
+    3) Use continued fractions to recover the order $r$, then compute non-trivial factors via
+       $$\gcd(a^{r/2} \pm 1, N)$$.
     """)
 
     st.subheader("How Shor's Algorithm Works")
@@ -391,7 +391,7 @@ elif choice == "Shor's Algorithm":
 
         1. **Reduction to Period Finding**  
         - To factor an integer N, Shor’s algorithm reduces the problem to finding the 
-            period (or order) of the function f(x) = a^x mod N, for some random a < N.
+            period (or order) of the function $f(x) = a^x$ mod N, for some random $a < N$.
         - Once the period r is known, we can often compute the nontrivial factors of N.
 
         2. **Quantum Fourier Transform (QFT)**  
