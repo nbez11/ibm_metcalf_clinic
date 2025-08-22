@@ -242,57 +242,75 @@ elif choice == "Grover's Algorithm":
         marked states and suppress the non-marked states.
     """)
 
-    #User input
+    # User input
     num_qubits = st.slider("Number of qubits", 2, 4, 3)
     marked_states_input = st.text_input(
         "Enter marked states (comma-separated, e.g. 011,100)", "011,100"
     )
     marked_states = [s.strip() for s in marked_states_input.split(",") if s.strip()]
 
-    # Oracle builder (adapted from IBM article)
-    def grover_oracle(marked_states):
-        if not isinstance(marked_states, list):
-            marked_states = [marked_states]
-        qc = QuantumCircuit(num_qubits)
-        for target in marked_states:
-            rev_target = target[::-1]
-            zero_inds = [i for i, bit in enumerate(rev_target) if bit == "0"]
+    # Build Grover Oracle
+    def grover_oracle(marked_states, n_qubits):
+        qc = QuantumCircuit(n_qubits)
+        for state in marked_states:
+            rev_state = state[::-1]
+            zero_inds = [i for i, bit in enumerate(rev_state) if bit == "0"]
             if zero_inds:
                 qc.x(zero_inds)
-            ## this line doesnt work bc using AER simulator not IBM runtime qc.compose(MCMTGate(ZGate(), num_qubits - 1, 1), inplace=True)
-            qc.h(num_qubits - 1)                   # turn Z into X
-            qc.mcx(list(range(num_qubits - 1)), num_qubits - 1)
-            qc.h(num_qubits - 1)
+            if n_qubits > 1:
+                qc.h(n_qubits - 1)
+                qc.mcx(list(range(n_qubits - 1)), n_qubits - 1)
+                qc.h(n_qubits - 1)
+            else:
+                qc.z(0)
             if zero_inds:
                 qc.x(zero_inds)
         return qc
 
-    oracle = grover_oracle(marked_states)
-    grover_op = grover_operator(oracle)
+    # Build Diffusion Operator
+    def diffusion_operator(n_qubits):
+        qc = QuantumCircuit(n_qubits)
+        qc.h(range(n_qubits))
+        qc.x(range(n_qubits))
+        if n_qubits > 1:
+            qc.h(n_qubits - 1)
+            qc.mcx(list(range(n_qubits - 1)), n_qubits - 1)
+            qc.h(n_qubits - 1)
+        else:
+            qc.z(0)
+        qc.x(range(n_qubits))
+        qc.h(range(n_qubits))
+        return qc
 
-   # Optimal number of iterations
-    optimal_iter = int(np.floor(
-        np.pi / (4 * np.arcsin(np.sqrt(len(marked_states) / 2**num_qubits)))
-    ))
+    # Compute optimal number of Grover iterations
+    optimal_iter = int(np.floor(np.pi / (4 * np.arcsin(np.sqrt(len(marked_states) / 2**num_qubits)))))
     st.write(f"Optimal number of Grover iterations: **{optimal_iter}**")
 
-    # Full Grover circuit
+    # Build full Grover circuit
     qc = QuantumCircuit(num_qubits, num_qubits)
-    qc.h(range(num_qubits))
-    qc.compose(grover_op.power(optimal_iter), inplace=True)
+    qc.h(range(num_qubits))  # Initialize in superposition
+
+    oracle = grover_oracle(marked_states, num_qubits)
+    diffusion = diffusion_operator(num_qubits)
+
+    for _ in range(optimal_iter):
+        qc.compose(oracle, inplace=True)
+        qc.compose(diffusion, inplace=True)
+
     qc.measure(range(num_qubits), range(num_qubits))
 
+    # Show circuit
     show_circuit(qc)
 
-    #Run
+    # Run on AerSimulator
     shots = st.slider("Shots", 100, 5000, 1024, step=100)
     result = backend.run(qc, shots=shots).result()
     counts = result.get_counts()
     st.write("Counts:", counts)
 
     st.write("""
-     Notice that the marked states appear with much higher probability 
-    than the unmarked states, thanks to amplitude amplification.
+    Notice that the marked states appear with higher probability 
+    than the unmarked states due to amplitude amplification.
     """)
 
 
