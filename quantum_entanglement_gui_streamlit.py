@@ -1,11 +1,12 @@
 import streamlit as st
 import numpy as np
-from qiskit import QuantumCircuit, transpile
+from qiskit import QuantumCircuit, transpile, QuantumRegister, ClassicalRegister
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, depolarizing_error, amplitude_damping_error, thermal_relaxation_error
-from qiskit.circuit.library import grover_operator, MCMTGate, ZGate
-from math import pi
+from qiskit.circuit.library import grover_operator, MCMTGate, ZGate, QFT
+from math import pi, gcd, floor, log
 import matplotlib.pyplot as plt
+from fractions import Fraction
 
 st.set_page_config(page_title="Quantum Entanglement Explorer", layout="wide")
 
@@ -18,6 +19,7 @@ pages = [
     "CHSH Game",
     "SKQD Algorithm",
     "Grover's Algorithm",
+    "Shor's Algorithm",
     "Noise Experiments",
     "Autograder"
 ]
@@ -307,6 +309,183 @@ elif choice == "Grover's Algorithm":
     Notice that the marked states appear with higher probability 
     than the unmarked states due to amplitude amplification.
     """)
+
+# Shor's Algo
+elif choice == "Shor's Algorithm":
+    st.title("Shor's Algorithm")
+    st.link_button("Check out the IBM article this section is based on", "https://quantum.cloud.ibm.com/docs/en/tutorials/shors-algorithm")
+    st.write("""
+    This tab reproduces the IBM tutorial’s approach:
+    1) Build order-finding as phase estimation for the modular-multiply unitary $\(M_a\)$ with $\(N=15, a=2\)$.
+    2) Run on a simulator to get the counting-register distribution (peaks near multiples of $\(k/r\)$).
+    3) Use continued fractions to recover the order $\(r\)$, then compute non-trivial factors via
+       $\\(\\gcd(a^{r/2} \\pm 1, N)\\)$.
+    """)
+
+    st.subheader("How Shor's Algorithm Works")
+
+    st.write("""
+        Shor’s algorithm is a quantum algorithm for integer factorization. 
+        Its power comes from turning a hard classical problem (factoring large numbers) into 
+        a problem of finding the period of a modular function, which quantum computers 
+        can solve efficiently. In essence it can find the prime factors of large
+        integers faster than any known classical algorithm
+
+        1. **Reduction to Period Finding**  
+        - To factor an integer N, Shor’s algorithm reduces the problem to finding the 
+            period (or order) of the function f(x) = a^x mod N, for some random a < N.
+        - Once the period r is known, we can often compute the nontrivial factors of N.
+
+        2. **Quantum Fourier Transform (QFT)**  
+        - The quantum circuit prepares a superposition of many possible values of x.
+        - Modular exponentiation entangles these x-values with their outputs f(x).
+        - Applying the QFT extracts information about the period r, amplifying 
+            measurement outcomes that encode the hidden periodicity.
+        - This step specifically is what gives the quantum algorithm an advantage
+             over its classical counterparts turning it into having an exponential 
+             speedup.
+             
+        3. **Measurement and Classical Postprocessing**  
+        - Measuring the quantum state collapses it to a value strongly correlated with the period.
+        - Classical number theory (using the Euclidean algorithm) then turns the period into actual factors of N.
+        """)
+
+    st.subheader("Role of Entanglement")
+    st.write("""
+        Entanglement is essential because it correlates each input x (held in superposition) 
+        with its modular output f(x). This global correlation ensures that when the QFT is 
+        applied, interference across all states reveals the hidden period r. Without entanglement, 
+        the algorithm would just produce random samples of f(x) with no usable structure.
+        """)
+
+    st.subheader("Why It Is Important")
+    st.write("""
+        - **Breaks RSA Encryption**: RSA is one of the most widely used public-key cryptosystems, 
+        securing things like online banking, HTTPS websites, and digital signatures. Its security 
+        relies on the fact that factoring a large number is infeasible for classical computers as it would
+        take an extremely large time to do (such a long time it is no feasible at all). 
+
+        Shor’s algorithm can factor these large numbers efficiently on a quantum computer. 
+        Once the modulus N is factored into its prime components, an attacker can compute the 
+        private key and decrypt messages or forge signatures, allowing them to impersonate anyone online. 
+        """)
+    
+    N = 15
+    a = 2  #From IBM tutorial
+    def M2mod15():
+        """Permutation for b=2 (mod 15) implemented with swaps (as in IBM tutorial)."""
+        U = QuantumCircuit(4)
+        U.swap(2, 3)
+        U.swap(1, 2)
+        U.swap(0, 1)
+        U = U.to_gate()
+        U.name = "M_2"
+        return U
+
+    def M4mod15():
+        """Permutation for b=4 (mod 15) implemented with swaps (as in IBM tutorial)."""
+        U = QuantumCircuit(4)
+        U.swap(1, 3)
+        U.swap(0, 2)
+        U = U.to_gate()
+        U.name = "M_4"
+        return U
+
+    def a2kmodN(a, k, N):
+        """Compute a^(2^k) mod N by repeated squaring."""
+        val = a
+        for _ in range(k):
+            val = (val * val) % N
+        return val
+
+    # Qubit counts: 4 target qubits for N=15; 8 control qubits gives good precision
+    num_target = floor(log(N - 1, 2)) + 1  # = 4
+    num_control = st.slider("Counting (control) qubits m", 5, 10, 8)
+    shots = st.slider("Shots", 100, 5000, 1024, step=100)
+
+    # Build list of needed Mb unitaries for b = a^(2^k) mod N, k=0..m-1
+    k_list = range(num_control)
+    b_list = [a2kmodN(a, k, N) for k in k_list]
+
+    st.caption(f"b values (a^(2^k) mod {N}) for a={a}: {b_list}")
+
+    # Construct the phase estimation (order finding) circuit
+    control = QuantumRegister(num_control, name="C")
+    target = QuantumRegister(num_target, name="T")
+    creg = ClassicalRegister(num_control, name="out")
+    circuit = QuantumCircuit(control, target, creg)
+
+    # Prepare |1> on the target register (|0001⟩ in little-endian is X on T0)
+    circuit.x(num_control)  # note: T qubits follow C in allocation; this targets T[0]
+
+    # Hadamards on control; controlled-M_b per control qubit (skip identities b=1)
+    for k, q in enumerate(control):
+        circuit.h(q)
+        b = b_list[k]
+        if b == 2:
+            circuit.compose(M2mod15().control(), qubits=[q] + list(target), inplace=True)
+        elif b == 4:
+            circuit.compose(M4mod15().control(), qubits=[q] + list(target), inplace=True)
+        else:
+            # b == 1 acts as identity; nothing to add
+            pass
+
+    # Inverse QFT on the control register, then measure it
+    circuit.compose(QFT(num_control, inverse=True), qubits=control, inplace=True)
+    circuit.measure(control, creg)
+
+    st.subheader("Circuit")
+    show_circuit(circuit)
+
+    #Run on your AerSimulator backend
+    circuit = circuit.decompose().decompose()
+    result = backend.run(circuit, shots=shots).result()
+    counts = result.get_counts()
+
+    st.subheader("Counts (control register)")
+    st.write(counts)
+
+    # Post-processing: continued fractions to estimate r
+    # Convert each measured bitstring to decimal and phase
+    rows = []
+    phases = []
+    for bitstr, cnt in counts.items():
+        dec = int(bitstr, 2) 
+        phase = dec / (2**num_control)
+        phases.append((bitstr, dec, phase, cnt))
+        rows.append([bitstr, dec, f"{dec}/{2**num_control}", f"{phase:.4f}", cnt])
+    st.subheader("Measured phases")
+    st.table(rows)
+
+    # Guess r values from phases via continued fractions (limit denominator by N)
+    guesses = []
+    for bitstr, dec, phase, cnt in phases:
+        frac = Fraction(phase).limit_denominator(N)
+        r_guess = frac.denominator
+        guesses.append((bitstr, phase, f"{frac.numerator}/{frac.denominator}", r_guess, cnt))
+
+    st.subheader("Continued-fractions estimates for r")
+    st.table([[b, f"{ph:.4f}", fr, r, c] for (b, ph, fr, r, c) in guesses])
+
+    # Try to recover factors using any even r guess (and phase != 0)
+    def try_factor_from_r(a, N, r):
+        if r <= 0 or r % 2 == 1:
+            return None
+        x = pow(a, r // 2, N)
+        f1, f2 = gcd(x - 1, N), gcd(x + 1, N)
+        nontrivial = sorted({f for f in (f1, f2) if f not in (1, N)})
+        return nontrivial or None
+
+    found = set()
+    for _, phase, _, r_guess, _ in guesses:
+        facs = try_factor_from_r(a, N, r_guess)
+        if facs:
+            for f in facs:
+                found.add(f)
+    if found:
+        st.success(f"Non-trivial factor(s) recovered: {sorted(found)}  (Product {np.prod(sorted(found))})")
+    else:
+        st.info("No non-trivial factors from this run. Increase shots or try again — some outcomes give r=1 or an odd divisor of r.")
 
 
 # Noise Experiments
