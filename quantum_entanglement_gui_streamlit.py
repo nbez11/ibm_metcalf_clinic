@@ -12,6 +12,7 @@ st.set_page_config(page_title="Quantum Entanglement Explorer", layout="wide")
 # Sidebar Navigation
 pages = [
     "Lesson",
+    "Introduction",
     "Bell State",
     "Quantum Teleportation",
     "Superdense Coding",
@@ -35,6 +36,7 @@ if choice == "Lesson":
     st.title("📚 Quantum Entanglement Lesson")
     st.write("""
     Welcome to the Quantum Entanglement Explorer! This app teaches you about entanglement through interactive demos:
+    - **Introduction**: History of quantum entanglement and its relevancy.
     - **Bell State**: The simplest form of entanglement.
     - **Quantum Teleportation**: Transmit a qubit's state using entanglement + classical bits.
     - **Superdense Coding**: Send 2 classical bits using 1 qubit and entanglement.
@@ -49,9 +51,65 @@ if choice == "Lesson":
     """)
     st.write("**Key Idea:** After the H and CNOT, q0 and q1 are maximally entangled. Measuring one instantly determines the other.")
 
+# Introduction: definition, short history, relevancy
+elif choice == "Introduction":
+    st.title("Introduction to Quantum Entanglement")
+    st.write("""
+    Quantum entanglement is the phenomenon where the quantum state of each particle in a group cannot be described 
+    independently of the state of the others, even when the particles are separated by a large distance.
+    
+    Quantum superposition is the principle in quantum mechanics that allows a quantum system, such as a particle or qubit, 
+    to exist in multiple states simultaneously until a measurement is made. 
+    """)
+    st.subheader("Short History")
+    st.write("""
+    - The concept was first described by the Einstein-Podolsky-Rosen(EPR) paradox in 1935.
+        - Two opposing views emerged: 
+            - Entanglement is paradoxical; therefore, quantum mechanics is incomplete.
+            - Entanglement is a real feature of reality.
+        - Einstein famously called entanglement *"spooky action at a distance"*.
+    - John Stuart Bell published his theorem (Bell's theorem) in 1964, allowing the debate to be tested.
+        - **Bell's inequality**: a limit on the correlations that can exist between measurements of two particles if those 
+            particles are assumed to be governed by local realism.
+        - Starting in the 1970s, experiments on the theorem were conducted, proving quantum entanglement to be a property 
+          of nature. 
+        """)
+    st.subheader("How is it Relevant?")
+    st.write("""
+    - Most importantly, quantum entanglement has tangible practical uses, mainly in quantum computing:
+        - It's the main resource used in quantum communication, where information is transmitted using qubits.
+            - Quantum cryptography uses properties of qubits and entanglement to make communication systems more secure 
+              from outside threats. 
+        - It allows quantum computing to be astronomically faster at solving certain problems.
+            - Problems that would take thousands of years with classical computing can take minutes.
+            - Computational demand grows at a much slower pace as the complexity of a simulated system increases. 
+    - However, quantum entanglement is still only partially understood, leading to many interesting hypotheses.
+        - Although the hypotheses are speculative, they can be fun thought exercises, and some may eventually be proven 
+          right or wrong.
+        - Entangled particles are connected by tiny wormholes.
+        - Consciousness emerges from quantum entanglement in the brain 
+        - Quantum entanglement and superposition may imply the existence of a multiverse.
+    """)
+    st.subheader("Basic Notations and Concepts")
+    st.write("""
+    - A **qubit** is a two-level quantum system that can be in basis |0⟩, |1⟩ or in a superposition of them , used as a 
+      basic unit of quantuminformation.
+        - Written using Dirac notation: ∣ψ⟩=α∣0⟩+β∣1⟩, 
+            - ∣a⟩(ket) is a coulmn vector representation of a quantum state; ⟨a|(bra) is the conjugate transpose of the ket.
+            - α, β are complex probability amplitudes such that |α|² + |β|² = 1
+    - A **quantum circuit** is a model of quantum computation that initializes qubits, applies a sequence of unitary gates, 
+      and then measures them to produce classical output.
+        - Unitary gates are unitary operations that change a qubit's state while preserving its norm (total probability)
+          and inner products.
+    """)
+
 # Bell State
 elif choice == "Bell State":
     st.title("🔗 Bell State Demo")
+    st.write("""
+    A **Bell state** is one of four special maximally entangled quantum states of two qubits. Measuring one qubit instantly 
+    tells you the outcome of the other, regardless of distance.
+    """)
     qc = QuantumCircuit(2, 2)
     qc.h(0)
     qc.cx(0, 1)
