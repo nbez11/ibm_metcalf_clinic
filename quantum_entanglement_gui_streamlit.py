@@ -18,11 +18,9 @@ pages = [
     "Quantum Teleportation",
     "Superdense Coding",
     "CHSH Game",
-    "SKQD Algorithm",
     "Grover's Algorithm",
     "Shor's Algorithm",
-    "Noise Experiments",
-    "Autograder"
+    "Noise Experiments"
 ]
 choice = st.sidebar.radio("Navigation", pages)
 
@@ -195,86 +193,6 @@ elif choice == "CHSH Game":
         st.success("Quantum violation of classical bound!")
     if S > 2.828:
         st.warning("Beyond Tsirelson's bound? Check parameters.")
-
-#SKQD Algorithm
-elif choice == "SKQD Algorithm":
-    st.title("Sample-based Krylov Quantum Diagonalization (SKQD)")
-    st.link_button("Check out the IBM article this section is based on", "https://quantum.cloud.ibm.com/learning/en/courses/quantum-diagonalization-algorithms/skqd")
-    st.write("""
-        The Sample-based Krylov Quantum Diagonalization (SKQD) algorithm is a
-        hybrid quantum-classical method used to estimate the energy levels
-        (eigenvalues) of a quantum system's Hamiltonian (a Hamiltonian describes
-        all energies, interactions, and rules of a system).
-    """)
-    
-    st.subheader("How it works")
-    st.write("""
-    1. Build a Krylov Subspace  
-        - Start with a simple state |v⟩.  
-        - Apply the Hamiltonian H repeatedly to generate states:  
-            |v⟩, H|v⟩, H²|v⟩, …  
-        - These states form a small (example)subspace that captures the important
-            physics.
-
-    2. Estimate Overlaps on a Quantum Computer  
-        - We need to find out how similar the states are to each other.  
-        - Using quantum circuits (like swap tests), we estimate the inner products:  
-        - Sᵢⱼ = ⟨vᵢ | vⱼ⟩  
-        - Hᵢⱼ = ⟨vᵢ | H | vⱼ⟩  
-        - Because our quantum computers can only give probabilistic results, we 
-            repeat experiments many times (this is the sample-based part).
-
-    3. Classical Diagonalization  
-        - The measured overlaps form a small matrix.  
-        - A classical computer diagonalizes this small matrix to approximate the
-            true energy levels (eigenvalues) of the big Hamiltonian.
-    """)
-
-    st.subheader("Role of Entanglement")
-    st.write("""
-    - Entanglement is used in SKQD during the overlap estimation step. 
-    - To compare two quantum states (for example |vᵢ⟩ and |vⱼ⟩), we need 
-        circuits like the swap test. These circuits rely on creating entanglement 
-        between an ancilla qubit (a helper qubit) and the system qubits. The 
-        expectation value of the ancilla quibit determines the value overlap
-        of the quantum states.  
-    - This entanglement lets us extract information about how similar two states 
-        are, without fully measuring or destroying them. 
-    - In other words, entanglement links multiple states together so that we can
-        measure how similar they are to eachother.
-    - Without entanglement, we would not be able to build the Krylov subspace
-        to efficiently estimates the overlaps of the states.
-    """)
-
-    st.subheader("Why it is important")
-    st.write("""
-    - Avoids heavy quantum algorithms: Unlike full quantum phase estimation,
-        SKQD works on near-term (NISQ) devices. In essence instead of using the 
-        extremely deep circuits that quantum phase estimation uses to find energy 
-        levels, SKQD can use much shallower circtuis that use more practical
-        repeated sample.
-    - Efficient: A few Krylov states often give very accurate energy estimates.
-    - Applications: 
-        -Quantum chemistry: it allows for the ground state energy of 
-            molecules of complex sysetms to be calculated.
-        - Materials: science: as it may allow us to better understand the flow of
-            electrons by knowing their quantum properties which may lead to 
-            efficientcy gains.
-    """)
-    
-    st.subheader("In short:")  
-    st.write("""
-    SKQD lets a quantum computer provide just enough information (via sampling) so
-    that a classical computer can do the hard math of diagonalizing the system's
-    Hamiltonian. To give an analogy that may be a bit easier to understand, we
-    begin with a single state before repeatedly applying a chain of the system's
-    rules. This in turn generates a chain of related states which in turn allows
-    us to use difference combinations of them in order to created the krylov subspace.
-    From this subspace we can then analyze it in order to understand the physics
-    of the larger system. Once this is achieved we can then switch back to classical
-    computing in order to diagonalize the states in order to find the energy of
-    our total system. 
-    """)
     
 # Grover
 elif choice == "Grover's Algorithm":
@@ -589,31 +507,3 @@ elif choice == "Noise Experiments":
     show_circuit(qc)
     result = backend.run(qc, shots=shots, noise_model=noise_model).result()
     st.write("Counts with noise:", result.get_counts())
-
-# Autograder
-elif choice == "Autograder":
-    st.title("📝 Autograder")
-    import inspect
-    issues = []
-
-    # Check imports
-    if "matplotlib" in inspect.getsource(show_circuit):
-        issues.append("Matplotlib used for plotting (allowed only for draw).")
-    # Check .c_if
-    import re
-    if re.search(r"\.c_if\s*\(", inspect.getsource(show_circuit)):
-        issues.append("'.c_if' found in code.")
-    # Check Bell state
-    qc = QuantumCircuit(2, 2)
-    qc.h(0); qc.cx(0,1); qc.measure([0,1],[0,1])
-    counts = backend.run(qc, shots=1000).result().get_counts()
-    p00 = counts.get('00', 0)/1000
-    p11 = counts.get('11', 0)/1000
-    if p00 + p11 < 0.8:
-        issues.append("Bell state not producing strong correlations.")
-    if issues:
-        st.error("Issues found:")
-        for i in issues:
-            st.write("-", i)
-    else:
-        st.success("All checks passed!")
